@@ -41,6 +41,8 @@ public class BankAccountController implements ApplicationListener<ApplicationRea
         // Increment a metric called "transfer" every time this is called, and tag with from- and to country
         meterRegistry.counter("transfer",
                 "from", tx.getFromCountry(), "to", tx.getToCountry()).increment();
+
+
         Account from = getOrCreateAccount(fromAccount);
         Account to = getOrCreateAccount(toAccount);
         from.setBalance(from.getBalance().subtract(valueOf(tx.getAmount())));
@@ -103,4 +105,8 @@ public class BankAccountController implements ApplicationListener<ApplicationRea
     @ResponseStatus(code = HttpStatus.NOT_FOUND, reason = "account not found")
     public static class AccountNotFoundException extends RuntimeException {
     }
+
+
+
+
 }
