@@ -37,16 +37,29 @@ public class BankAccountController implements ApplicationListener<ApplicationRea
      * @param toAccount   to account id
      */
     @PostMapping(path = "/account/{fromAccount}/transfer/{toAccount}", consumes = "application/json", produces = "application/json")
-    public void transfer(@RequestBody Transaction tx, @PathVariable String fromAccount, @PathVariable String toAccount) {
+    public ResponseEntity<String> transfer(@RequestBody Transaction tx, @PathVariable String fromAccount, @PathVariable String toAccount) {
         // Increment a metric called "transfer" every time this is called, and tag with from- and to country
-        meterRegistry.counter("transfer",
-                "from", tx.getFromCountry(), "to", tx.getToCountry()).increment();
+
 
 
         Account from = getOrCreateAccount(fromAccount);
         Account to = getOrCreateAccount(toAccount);
+
+        System.out.println("balance: " + from.getBalance());
+        System.out.println("transfer amount: " + tx.getAmount());
+        if(from.getBalance().compareTo(valueOf(tx.getAmount())) < 0){
+            meterRegistry.counter("transfer_stopped_insufficient_fund").increment();
+            return ResponseEntity.ok("insufficient funds");
+        }
+
         from.setBalance(from.getBalance().subtract(valueOf(tx.getAmount())));
         to.setBalance(to.getBalance().add(valueOf(tx.getAmount())));
+
+        meterRegistry.counter("transfer_completed").increment();
+
+        meterRegistry.counter("transfer",
+                "from", tx.getFromCountry(), "to", tx.getToCountry()).increment();
+        return ResponseEntity.ok("Transfer completed");
     }
 
     /**
